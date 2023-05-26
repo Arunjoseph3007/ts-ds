@@ -1,20 +1,36 @@
+export enum Colors {
+  RED,
+  BLACK,
+  DOUBLE_BLACK,
+}
+
 export class RNode {
   value: number;
   left: null | RNode;
   right: null | RNode;
   parent: null | RNode;
-  isRed: boolean;
-  isDoubleBlack: boolean;
+  color: Colors;
   isNull: boolean;
 
-  constructor(value: number, isRed: boolean = true) {
+  constructor(value: number) {
     this.left = null;
     this.right = null;
     this.parent = null;
     this.value = value;
-    this.isRed = isRed;
-    this.isDoubleBlack = false;
+    this.color = Colors.RED;
     this.isNull = false;
+  }
+
+  isRed() {
+    return this.color == Colors.RED;
+  }
+
+  isBlack() {
+    return this.color == Colors.BLACK;
+  }
+
+  isDoubleBlack() {
+    return this.color == Colors.DOUBLE_BLACK;
   }
 
   deleteSelf() {
@@ -25,16 +41,17 @@ export class RNode {
 
   getDir() {
     if (!this.parent) return null;
-    if (this.value > this.parent.value) return "RIGHT";
-    else return "LEFT";
-  }
-
-  isBlack() {
-    return !this.isRed;
+    if (this.parent.right == this) return "RIGHT";
+    if (this.parent.left == this) return "LEFT";
+    return null;
   }
 
   recolor() {
-    this.isRed = !this.isRed;
+    if (this.isRed()) {
+      this.color = Colors.BLACK;
+    } else {
+      this.color = Colors.RED;
+    }
     return this;
   }
 
@@ -68,7 +85,7 @@ export class RNode {
 
   inorder() {
     this.left?.inorder();
-    console.log(`(${this.isRed ? "1" : "0"}, ${this.value})`);
+    process.stdout.write(this.toString());
     this.right?.inorder();
   }
 
@@ -99,11 +116,44 @@ export class RNode {
   }
 
   removeDoubleBlack() {
-    if (this.isNull) this.deleteSelf();
-    else this.isDoubleBlack = false;
+    if (this.isNull) {
+      this.deleteSelf();
+    } else {
+      this.color = Colors.BLACK;
+    }
   }
 
   toString() {
-    return `(${this.isRed ? "1" : "0"}, ${this.value})`;
+    return (
+      COLORS.reset +
+      COLORS.fg.white +
+      (this.isRed() ? COLORS.bg.red : COLORS.bg.black) +
+      " " +
+      (this.isNull ? "N" : this.value) +
+      " " +
+      COLORS.reset
+    );
+  }
+
+  print(level = 0) {
+    if (this.right) this.right.print(level + 1);
+
+    for (let i = 0; i < level; i++) {
+      process.stdout.write("     ");
+    }
+    console.log(this.toString());
+
+    if (this.left) this.left.print(level + 1);
   }
 }
+
+const COLORS = {
+  reset: "\x1b[0m",
+  bg: {
+    red: "\x1b[41m",
+    black: "\x1b[40m",
+  },
+  fg: {
+    white: "\x1b[37m",
+  },
+} as const;

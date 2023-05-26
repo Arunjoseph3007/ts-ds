@@ -1,4 +1,4 @@
-import { RNode } from "./RNode";
+import { Colors, RNode } from "./redBlackTreeNode";
 
 export class RedBlackTree {
   root: RNode | null;
@@ -7,11 +7,7 @@ export class RedBlackTree {
     this.root = null;
   }
 
-  inorderTraversal() {
-    if (this.root) this.root.inorder();
-  }
-
-  rotateLeft(node: RNode) {
+  private rotateLeft(node: RNode) {
     if (!node.left) {
       throw new Error("A node with no left element cannot be left rotated");
     }
@@ -31,7 +27,7 @@ export class RedBlackTree {
     node.parent = initialLeftChild;
   }
 
-  rotateRight(node: RNode) {
+  private rotateRight(node: RNode) {
     if (!node.right) {
       throw new Error("A node with no right element cannot be left rotated");
     }
@@ -51,7 +47,7 @@ export class RedBlackTree {
     node.parent = initialRightChild;
   }
 
-  bstInsert(node: RNode) {
+  private bstInsert(node: RNode) {
     let root = this.root;
     if (!root) return null;
 
@@ -78,7 +74,7 @@ export class RedBlackTree {
     }
   }
 
-  handleInsertionBlackUncle(newNode: RNode) {
+  private handleInsertionBlackUncle(newNode: RNode) {
     const dir = newNode.getDir();
     const parentDir = newNode.parent?.getDir();
     newNode.parent?.parent?.recolor();
@@ -108,7 +104,7 @@ export class RedBlackTree {
     return;
   }
 
-  handleInsertionRedUncle(newNode: RNode) {
+  private handleInsertionRedUncle(newNode: RNode) {
     if (!newNode.parent) return;
 
     newNode.parent.recolor();
@@ -132,26 +128,163 @@ export class RedBlackTree {
     }
 
     // Uncle is Red (do suitable recoloring)
-    if (uncle.isRed) this.handleInsertionRedUncle(newNode);
+    if (uncle.isRed()) this.handleInsertionRedUncle(newNode);
   }
 
-  insert(value: number) {
-    const newNode = new RNode(value);
+  private removeDoubleBlack(node: RNode) {
+    const dir = node.getDir();
+    const sibling = node.sibling();
+    const parent = node.parent;
 
-    // If tree is empty color balck && return
-    if (!this.root) {
-      newNode.isRed = false;
-      this.root = newNode;
+    if (!sibling) {
+      throw new Error("Double black node has no sibling");
+    }
+
+    // DB is root (terminates)
+    if (this.root == node || !parent) {
+      console.log("DB is root (terminates)");
+
+      node.color = Colors.BLACK;
       return;
     }
 
-    // Insert element (if Element already exists return)
-    if (!this.bstInsert(newNode)) return;
+    // DB's sibling is black and sibling's chidren black
+    if (
+      sibling.isBlack() &&
+      (!sibling.left || sibling.left.isBlack() || sibling.left.isNull) &&
+      (!sibling.right || sibling.right.isBlack() || sibling.right.isNull)
+    ) {
+      node.removeDoubleBlack();
 
-    this.checkAndResolveConflicts(newNode);
+      // If parent is red (make it black) (terminates)
+      if (parent.isRed()) {
+        parent.color = Colors.BLACK;
+      }
+      // If parent is black (make it doubleblack) (non-terminating)
+      else {
+        parent.color = Colors.DOUBLE_BLACK;
+        this.removeDoubleBlack(parent);
+      }
+
+      sibling.color = Colors.RED;
+      return;
+    }
+
+    // DB's sibling is red
+    // recolor sibling & parent and rotate in direction of DB
+    if (sibling.isRed()) {
+      console.log("DBs sibling is red");
+      sibling.recolor();
+      parent.recolor();
+
+      if (dir == "LEFT") {
+        this.rotateLeft(parent);
+      } else {
+        this.rotateRight(parent);
+      }
+
+      this.removeDoubleBlack(node);
+    }
+
+    // DB's sibling is black and near nephew is red and far nephew black
+    if (
+      sibling.isBlack() &&
+      node.nearNephew()?.isRed() &&
+      (!node.farNephew() || node.farNephew()?.isBlack)
+    ) {
+      console.log(
+        "sibling is black and near nephew is red and far nephew black"
+      );
+      // Swap colors of sibling and nearNephew
+      sibling.color = Colors.RED;
+      node.nearNephew()!.color = Colors.BLACK;
+
+      // Rotate sibling away from DB
+      if (dir == "LEFT") {
+        this.rotateRight(sibling);
+      }
+      if (dir == "RIGHT") {
+        this.rotateLeft(sibling);
+      }
+
+      this.removeDoubleBlack(node);
+      return;
+    }
+
+    // DB's sibling is black and far nephew is red
+    if (sibling.isBlack() && node.farNephew()?.isRed()) {
+      // Swap color of parent and sibling
+      if (parent.isRed()) {
+        sibling.color = Colors.RED;
+        parent.color = Colors.BLACK;
+      }
+
+      node.farNephew()!.color = Colors.BLACK;
+      if (node.nearNephew()) node.nearNephew()!.color = Colors.BLACK;
+
+      // Rotate parent towards DB
+      if (dir == "LEFT") {
+        this.rotateRight(parent);
+      }
+      if (dir == "RIGHT") {
+        this.rotateLeft(parent);
+      }
+
+      node.removeDoubleBlack();
+    }
   }
 
-  private findNodeWithValue(value: number) {
+  private deleteNode(node: RNode) {
+    // If node is leaf node
+    if (!node.left && !node.right) {
+      // Terminating condition
+      if (node.isRed()) {
+        node.deleteSelf();
+      } else {
+        node.isNull = true;
+        node.color = Colors.DOUBLE_BLACK;
+        this.removeDoubleBlack(node);
+      }
+      return;
+    }
+
+    // If node only has left child
+    if (!node.right && node.left) {
+      console.log("only left");
+
+      node.value = node.left.value;
+      this.deleteNode(node.left);
+      return;
+    }
+
+    // If node only has right child
+    if (node.right && !node.left) {
+      console.log("only right");
+
+      node.value = node.right.value;
+      this.deleteNode(node.right);
+      return;
+    }
+
+    // If node has both children
+    if (node.left && node.right) {
+      const succesor = node.inorderSuccessor() as RNode;
+      node.value = succesor.value;
+
+      this.deleteNode(succesor);
+      return;
+    }
+  }
+
+  delete(value: number) {
+    const node = this.find(value);
+
+    if (!node) return;
+
+    this.deleteNode(node);
+  }
+
+  find(value: number) {
     if (!this.root) return null;
 
     let node: RNode | null = this.root;
@@ -165,108 +298,29 @@ export class RedBlackTree {
     return null;
   }
 
-  private handleDoubleBlack(node: RNode) {
-    const dir = node.getDir();
-    const sibling = node.sibling();
-    const parent = node.parent;
+  insert(value: number) {
+    const newNode = new RNode(value);
 
-    // DB is root (terminates)
-    if (this.root == node || !parent) {
-      node.isDoubleBlack = false;
+    // If tree is empty color balck && return
+    if (!this.root) {
+      newNode.color = Colors.BLACK;
+      this.root = newNode;
       return;
     }
 
-    if (!sibling) {
-      throw new Error("Double black node has no sibling");
-    }
+    // Insert element (if Element already exists return)
+    if (!this.bstInsert(newNode)) return;
 
-    // DB's sibling is black and sibling's chidren black
-    if (
-      sibling.isBlack() &&
-      (!sibling.left || sibling.left.isBlack() || sibling.left.isNull) &&
-      (!sibling.right || sibling.right.isBlack() || sibling.right.isNull)
-    ) {
-      node.removeDoubleBlack();
-      // If parent is red (make it black) (terminates)
-      if (parent.isRed) {
-        parent.isRed = false;
-      }
-      // If parent is black (make it doubleblack) (non-terminating)
-      else {
-        parent.isDoubleBlack = true;
-        this.handleDoubleBlack(parent);
-      }
-
-      sibling.isRed = true;
-      return;
-    }
-
-    // DB's sibling is red
-    // recolor sibling & parent and rotate in direction of DB
-    if (sibling.isRed) {
-      sibling.recolor();
-      parent.recolor();
-
-      if (dir == "LEFT") {
-        this.rotateLeft(parent);
-      } else {
-        this.rotateRight(parent);
-      }
-
-      this.handleDoubleBlack(node);
-    }
-
-    // DB's sibling is black and near nephew is red
-    if (sibling.isBlack() && node.nearNephew()?.isRed) {
-    }
-
-    // DB's sibling is black and near nephew is red
-    if (sibling.isBlack() && !node.farNephew()?.isRed) {
-    }
+    this.checkAndResolveConflicts(newNode);
   }
 
-  private deleteNode(node: RNode) {
-    // If node is leaf node
-    if (!node.left && !node.right) {
-      // Terminating condition
-      if (node.isRed) {
-        node.deleteSelf();
-      } else {
-        node.isNull = true;
-        node.isDoubleBlack = true;
-        this.handleDoubleBlack(node);
-      }
-      return;
-    }
-
-    // If node only has left child
-    if (!node.right && node.left) {
-      node.value = node.left.value;
-      this.deleteNode(node.left);
-      return;
-    }
-
-    // If node only has right child
-    if (node.right && !node.left) {
-      node.value = node.right.value;
-      this.deleteNode(node.right);
-      return;
-    }
-
-    // If node has both children
-    if (node.left && node.right) {
-      const succesor = node.inorderSuccessor() as RNode;
-      node.value == succesor.value;
-      this.deleteNode(succesor);
-      return;
-    }
+  inorderTraversal() {
+    if (this.root) this.root.inorder();
+    console.log();
   }
 
-  delete(value: number) {
-    const node = this.findNodeWithValue(value);
-
-    if (!node) return;
-
-    this.deleteNode(node);
+  print() {
+    console.log("RED BLACK TREE:");
+    this.root?.print();
   }
 }
