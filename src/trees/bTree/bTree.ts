@@ -2,7 +2,7 @@ import { BTreeNode } from "./bTreeNode";
 
 /**
  * A node in BTree of order m has atmost m children and m-1 keys
- * and a minimum of ceil(m/2) - 1 children
+ * and a minimum of `ceil(m/2) - 1` children
  *
  * In a BTree all leaf nodes are in the same level
  *
@@ -39,6 +39,26 @@ export class BTree {
     return this;
   }
 
+  toString() {
+    let str = "";
+    let queue = [this.root];
+
+    while (queue.filter(Boolean).length) {
+      const newQueue: (BTreeNode | null)[] = [];
+
+      queue.forEach((node) => {
+        if (node) {
+          str += node;
+          newQueue.push(...node.children);
+        }
+      });
+
+      str += "\n";
+      queue = newQueue;
+    }
+    return str;
+  }
+
   private findNode(value: number) {
     if (!this.root) {
       throw "No root";
@@ -60,14 +80,37 @@ export class BTree {
     if (!node.isOverflown()) return;
 
     if (node == this.root) {
-      this.splitRoot();
+      this.splitRoot(node);
     } else {
       this.splitNonRoot(node);
     }
   }
 
-  private splitRoot() {
-    throw new Error("Method not implemented.");
+  private splitRoot(node: BTreeNode) {
+    const medianIndex = Math.floor(node.keys.length / 2);
+    const medianKey = node.keys[medianIndex];
+    const newRoot = new BTreeNode(this.order);
+
+    // @ Make new node
+    const newNode = new BTreeNode(this.order);
+    newNode.parent = newRoot;
+    newNode.keys = node.keys.slice(medianIndex + 1);
+    newNode.children = node.children.slice(medianIndex + 1);
+    newNode.children.forEach((child) => {
+      if (child) child.parent = newNode;
+    });
+
+    // @ Update this node
+    node.parent = newRoot;
+    node.keys = node.keys.slice(0, medianIndex);
+    node.children = node.children.slice(0, medianIndex + 1);
+
+    // @ Update parent
+    newRoot.keys.push(medianKey);
+    newRoot.children.push(node, newNode);
+
+    // @ Update root
+    this.root = newRoot;
   }
 
   private splitNonRoot(node: BTreeNode) {
@@ -80,6 +123,9 @@ export class BTree {
     newNode.parent = parent;
     newNode.keys = node.keys.slice(medianIndex + 1);
     newNode.children = node.children.slice(medianIndex + 1);
+    newNode.children.forEach((child) => {
+      if (child) child.parent = newNode;
+    });
 
     // @ Update this node
     node.keys = node.keys.slice(0, medianIndex);
@@ -90,5 +136,7 @@ export class BTree {
       parent.keys.find((key) => key > medianKey) || parent.keys.length;
     parent.insertKeyAt(medianKey, insertIndex);
     parent.insertChildAt(newNode, insertIndex + 1);
+
+    this.splitNode(parent);
   }
 }

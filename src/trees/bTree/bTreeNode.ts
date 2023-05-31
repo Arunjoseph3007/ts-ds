@@ -54,4 +54,8 @@ export class BTreeNode {
       ...this.children.slice(pos),
     ];
   }
+
+  toString() {
+    return (this.parent?.keys[0] || "R") + "->[" + this.keys + "] ";
+  }
 }
