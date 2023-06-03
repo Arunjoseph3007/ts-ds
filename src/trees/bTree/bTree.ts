@@ -7,6 +7,19 @@ import { BTreeNode } from "./bTreeNode";
  * In a BTree all leaf nodes are in the same level
  *
  * All the keys and children are in sorted order
+ *
+ * An Order 3 B Tree looks like
+ * ```
+ *                     [9]
+ *           ___________|_____________________
+ *          |                                |
+ *        [3,6]                         [12,15,18]
+ *     _____|_________          ____________|_______________
+ *    |      |       |         |       |         |         |
+ * [1,2]  [4,5]   [7,8]    [10,11]  [13,14]   [16,17]   [19,20]
+ *
+ *
+ * ```
  */
 export class BTree {
   order: number;
@@ -39,6 +52,62 @@ export class BTree {
     return this;
   }
 
+  delete(value: number) {
+    if (!this.root) {
+      throw new Error("Tree is empty");
+    }
+    const node = this.root.searchNode(value);
+
+    if (!node) {
+      throw new Error(`Value: ${value} is not present`);
+    }
+
+    if (node.isLeafNode()) {
+      this.deleteLeafNode(node, value);
+    }
+    // @ If node is internal node
+    else {
+    }
+  }
+
+  private deleteLeafNode(node: BTreeNode, value: number) {
+    // @ If node has more than minimum children
+    if (node.isMoreThanMinKeys() || this.root == node) {
+      node.keys = node.keys.filter((key) => key != value);
+      node.children.pop();
+      return;
+    }
+
+    // @ Underflow may arise
+    const childIdx = node.childIndex()!;
+    const leftSibling = node.leftSibling();
+    const rightSibling = node.rightSibling();
+    const parent = node.parent!;
+
+    if (leftSibling && leftSibling.isMoreThanMinKeys()) {
+      const lastKeyOfLeftSibling = leftSibling.keys.pop() as number;
+      node.keys = [parent.keys[childIdx], ...node.keys];
+      node.children.push(null);
+      parent.keys[childIdx] = lastKeyOfLeftSibling;
+      return;
+    }
+    if (rightSibling && rightSibling.isMoreThanMinKeys()) {
+      const firstKeyOfRightSibling = rightSibling.keys.shift() as number;
+      node.keys = [parent.keys[childIdx], ...node.keys];
+      node.children.push(null);
+      parent.keys[childIdx] = firstKeyOfRightSibling;
+      return;
+    }
+    if (leftSibling) {
+      // @ merge with left sibling
+      return;
+    }
+    if (rightSibling) {
+      // @ merge with right sibling
+      return;
+    }
+  }
+
   toString() {
     let str = "";
     let queue = [this.root];
@@ -67,8 +136,10 @@ export class BTree {
   }
 
   private insertToLeaf(node: BTreeNode, value: number) {
-    const insertIndex =
-      node.keys.find((key) => key > value) || node.keys.length;
+    let insertIndex = node.keys.some((key) => key > value)
+      ? node.keys.findIndex((key) => key > value)
+      : node.keys.length;
+    // if (insertIndex == -1) insertIndex = node.keys.length;
 
     node.insertKeyAt(value, insertIndex);
     node.children.push(null);
@@ -77,7 +148,7 @@ export class BTree {
   }
 
   private splitNode(node: BTreeNode) {
-    if (!node.isOverflown()) return;
+    if (!node.isOverflow()) return;
 
     if (node == this.root) {
       this.splitRoot(node);
@@ -132,8 +203,9 @@ export class BTree {
     node.children = node.children.slice(0, medianIndex + 1);
 
     // @ Update parent
-    const insertIndex =
-      parent.keys.find((key) => key > medianKey) || parent.keys.length;
+    const insertIndex = parent.keys.some((key) => key > medianKey)
+      ? parent.keys.findIndex((key) => key > medianKey)
+      : parent.keys.length;
     parent.insertKeyAt(medianKey, insertIndex);
     parent.insertChildAt(newNode, insertIndex + 1);
 

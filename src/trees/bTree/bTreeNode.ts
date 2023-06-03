@@ -19,12 +19,62 @@ export class BTreeNode {
     return this.keys.length >= this.order;
   }
 
-  isOverflown() {
+  isOverflow() {
     return this.children.length > this.order;
+  }
+
+  isUnderFlow() {
+    return this.children.length < Math.ceil(this.order / 2);
+  }
+
+  isMoreThanMinKeys() {
+    return this.children.length > Math.ceil(this.order / 2);
   }
 
   isLeafNode() {
     return this.children.filter((child) => child != null).length == 0;
+  }
+
+  childIndex() {
+    if (!this.parent) return null;
+
+    let i = 0;
+    for (let child of this.parent.children) {
+      if (child == this) return i;
+      i++;
+    }
+    return null;
+  }
+
+  leftSibling(): BTreeNode | null {
+    if (!this.parent) return null;
+
+    const childIdx = this.childIndex()!;
+
+    return childIdx == 0 ? null : this.parent.children[childIdx - 1];
+  }
+
+  rightSibling() {
+    if (!this.parent) return null;
+
+    const childIdx = this.childIndex()!;
+
+    return childIdx == this.parent.children.length - 1
+      ? null
+      : this.parent.children[childIdx + 1];
+  }
+
+  searchNode(value: number): BTreeNode | null {
+    if (this.keys.includes(value)) {
+      return this;
+    }
+
+    if (this.isLeafNode()) {
+      return null;
+    }
+
+    const index = this.keys.findIndex((key) => key > value) || this.keys.length;
+    return this.children[index]!.searchNode(value);
   }
 
   findNode(value: number): BTreeNode {
@@ -55,7 +105,23 @@ export class BTreeNode {
     ];
   }
 
+  inOrder() {
+    const res: number[] = [];
+    this.children.forEach((child, i, arr) => {
+      child && res.push(...child.inOrder());
+
+      if (i !== arr.length - 1) res.push(this.keys[i]);
+    });
+    return res;
+  }
+
   toString() {
-    return (this.parent?.keys[0] || "R") + "->[" + this.keys + "] ";
+    const childIdx = this.childIndex();
+    const parentval = this.parent
+      ? childIdx == this.parent.keys.length
+        ? "L"
+        : this.parent.keys[childIdx as number]
+      : "R";
+    return parentval + "->[" + this.keys + "] ";
   }
 }

@@ -1,8 +1,10 @@
 import { BTree } from "./bTree";
 
-const bTree = new BTree(3);
+const bTree = new BTree(4);
 
-for (let i = 1; i <= 10; i++) {
-  bTree.insert(i);
+for (let inp = 0; inp < 20; inp++) {
+  bTree.insert(inp);
+  console.log(inp, `${bTree}`);
 }
-console.log(`${bTree}`);
+
+console.log(bTree.root?.inOrder());
