@@ -91,15 +91,17 @@ export class BTree {
     // @ Try borrowing from left
     if (leftSibling && leftSibling.isMoreThanMinKeys()) {
       const lastKeyOfLeftSibling = leftSibling.keys.pop() as number;
-      leftSibling.children.pop();
-      node.keys = [parent.keys[childIdx - 1], ...node.keys];
+      const lastChildOfleftSibling = leftSibling.children.pop()!;
+      node.keys.unshift(parent.keys[childIdx - 1]);
+      node.children.unshift(lastChildOfleftSibling);
       parent.keys[childIdx - 1] = lastKeyOfLeftSibling;
     }
     // @ Try borrowing from right
     else if (rightSibling && rightSibling.isMoreThanMinKeys()) {
       const firstKeyOfRightSibling = rightSibling.keys.shift() as number;
-      rightSibling.children.pop();
-      node.keys = [...node.keys, parent.keys[childIdx]];
+      const firstChildofRightSibling = rightSibling.children.shift()!;
+      node.keys.push(parent.keys[childIdx]);
+      node.children.push(firstChildofRightSibling);
       parent.keys[childIdx] = firstKeyOfRightSibling;
     }
     // @ If left sibling merge with if

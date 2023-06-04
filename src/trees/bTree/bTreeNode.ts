@@ -181,8 +181,9 @@ export class BTreeNode {
       COLORS.fg.yellow +
       this.keys +
       COLORS.reset +
-      "] " +
-      COLORS.reset +
+      "]" +
+      // this.children.length +
+      " " +
       COLORS.fg.cyan +
       parentval +
       COLORS.reset +
