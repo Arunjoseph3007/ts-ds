@@ -135,23 +135,23 @@ export class BTreeNode {
     return this.children[index + 1];
   }
 
-  inorderSucc(value: number) {
+  inorderSucc(value: number): [number, BTreeNode] | [-1, null] {
     const right = this.rightOf(value);
-    if (!right) return null;
+    if (!right) return [-1, null];
 
     let node = right;
     while (true) {
       if (node.children[0]) {
         node = node.children[0];
       } else {
-        return node.keys[0];
+        return [node.keys[0], node];
       }
     }
   }
 
-  inorderPred(value: number) {
+  inorderPred(value: number): [number, BTreeNode] | [-1, null] {
     const left = this.leftOf(value);
-    if (!left) return null;
+    if (!left) return [-1, null];
 
     let node = left;
     while (true) {
@@ -159,18 +159,13 @@ export class BTreeNode {
       if (rightMost) {
         node = rightMost;
       } else {
-        return node.keys[node.keys.length - 1];
+        return [node.keys[node.keys.length - 1], node];
       }
     }
   }
 
   toString() {
     const childIdx = this.childIndex();
-    // const parentval = this.parent
-    //   ? childIdx == this.parent.keys.length
-    //     ? ""
-    //     : this.parent.keys[childIdx as number]
-    //   : "R";
     const parentval =
       this.parent && childIdx != this.parent.keys.length
         ? this.parent.keys[childIdx as number]

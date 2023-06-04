@@ -66,6 +66,10 @@ export class BTree {
       throw new Error(`Value: ${value} is not present`);
     }
 
+    this.deleteNode(node, value);
+  }
+
+  private deleteNode(node: BTreeNode, value: number) {
     if (node.isLeafNode()) {
       node.keys = node.keys.filter((key) => key != value);
       node.children.pop();
@@ -73,6 +77,34 @@ export class BTree {
     }
     // @ If node is internal node
     else {
+      this.deleteInternalNode(node, value);
+    }
+  }
+
+  private deleteInternalNode(node: BTreeNode, value: number) {
+    const valIndex = node.keys.indexOf(value);
+    const [succVal, succNode] = node.inorderSucc(value);
+    const [predVal, predNode] = node.inorderPred(value);
+    const left = node.leftOf(value)!;
+    const right = node.rightOf(value)!;
+
+    if (predNode && predNode.isMoreThanMinKeys()) {
+      node.keys[valIndex] = predVal;
+      predNode.keys.pop();
+      predNode.children.pop();
+    } else if (succNode && succNode.isMoreThanMinKeys()) {
+      node.keys[valIndex] = succVal;
+      succNode.keys.shift();
+      succNode.children.shift();
+    }
+    // @ Merge left and right node
+    else {
+      left.keys = [...left.keys, value, ...right.keys];
+      left.children = [...left.children, ...right.children];
+      node.keys = node.keys.filter((key) => key != value);
+      node.children = node.children.filter((ch) => ch != right);
+      this.deleteNode(left, value);
+      this.fixDeletion(node)
     }
   }
 
