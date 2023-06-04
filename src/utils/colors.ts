@@ -6,5 +6,7 @@ export const COLORS = {
   },
   fg: {
     white: "\x1b[37m",
+    yellow: "\x1b[33m",
+    cyan: "\x1b[36m",
   },
 } as const;

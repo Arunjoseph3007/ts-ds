@@ -1,3 +1,5 @@
+import { COLORS } from "../../utils/colors";
+
 export class BTreeNode {
   order: number;
   keys: number[];
@@ -64,6 +66,12 @@ export class BTreeNode {
       : this.parent.children[childIdx + 1];
   }
 
+  getInsertIndex(value: number) {
+    return this.keys.some((key) => key > value)
+      ? this.keys.findIndex((key) => key > value)
+      : this.keys.length;
+  }
+
   searchNode(value: number): BTreeNode | null {
     if (this.keys.includes(value)) {
       return this;
@@ -73,7 +81,7 @@ export class BTreeNode {
       return null;
     }
 
-    const index = this.keys.findIndex((key) => key > value) || this.keys.length;
+    const index = this.getInsertIndex(value);
     return this.children[index]!.searchNode(value);
   }
 
@@ -115,13 +123,70 @@ export class BTreeNode {
     return res;
   }
 
+  leftOf(value: number) {
+    const index = this.keys.findIndex((key) => key === value);
+    if (index == -1) return null;
+    return this.children[index];
+  }
+
+  rightOf(value: number) {
+    const index = this.keys.findIndex((key) => key === value);
+    if (index == -1) return null;
+    return this.children[index + 1];
+  }
+
+  inorderSucc(value: number) {
+    const right = this.rightOf(value);
+    if (!right) return null;
+
+    let node = right;
+    while (true) {
+      if (node.children[0]) {
+        node = node.children[0];
+      } else {
+        return node.keys[0];
+      }
+    }
+  }
+
+  inorderPred(value: number) {
+    const left = this.leftOf(value);
+    if (!left) return null;
+
+    let node = left;
+    while (true) {
+      const rightMost = node.children[node.children.length - 1];
+      if (rightMost) {
+        node = rightMost;
+      } else {
+        return node.keys[node.keys.length - 1];
+      }
+    }
+  }
+
   toString() {
     const childIdx = this.childIndex();
-    const parentval = this.parent
-      ? childIdx == this.parent.keys.length
-        ? "L"
-        : this.parent.keys[childIdx as number]
-      : "R";
-    return parentval + "->[" + this.keys + "] ";
+    // const parentval = this.parent
+    //   ? childIdx == this.parent.keys.length
+    //     ? ""
+    //     : this.parent.keys[childIdx as number]
+    //   : "R";
+    const parentval =
+      this.parent && childIdx != this.parent.keys.length
+        ? this.parent.keys[childIdx as number]
+        : "";
+    return (
+      "[" +
+      COLORS.reset +
+      COLORS.fg.yellow +
+      this.keys +
+      COLORS.reset +
+      "] " +
+      COLORS.reset +
+      COLORS.fg.cyan +
+      parentval +
+      COLORS.reset +
+      " "
+    );
   }
 }

@@ -43,6 +43,8 @@ export class BTree {
       this.root = newNode;
       return;
     }
+
+    if (this.root!.searchNode(value)) return;
     // @ If tree is not empty
     else {
       const node = this.findNode(value);
@@ -53,6 +55,8 @@ export class BTree {
   }
 
   delete(value: number) {
+    console.log(`Delet`, value);
+
     if (!this.root) {
       throw new Error("Tree is empty");
     }
@@ -63,49 +67,59 @@ export class BTree {
     }
 
     if (node.isLeafNode()) {
-      this.deleteLeafNode(node, value);
+      node.keys = node.keys.filter((key) => key != value);
+      node.children.pop();
+      this.fixDeletion(node);
     }
     // @ If node is internal node
     else {
     }
   }
 
-  private deleteLeafNode(node: BTreeNode, value: number) {
-    // @ If node has more than minimum children
-    if (node.isMoreThanMinKeys() || this.root == node) {
-      node.keys = node.keys.filter((key) => key != value);
-      node.children.pop();
-      return;
-    }
+  size() {
+    return this.root?.inOrder().length || 0;
+  }
 
-    // @ Underflow may arise
-    const childIdx = node.childIndex()!;
+  private fixDeletion(node: BTreeNode) {
+    if (node == this.root || !node.isUnderFlow()) return;
+
+    const parent = node.parent!;
     const leftSibling = node.leftSibling();
     const rightSibling = node.rightSibling();
-    const parent = node.parent!;
+    const childIdx = node.childIndex()!;
 
+    // @ Try borrowing from left
     if (leftSibling && leftSibling.isMoreThanMinKeys()) {
       const lastKeyOfLeftSibling = leftSibling.keys.pop() as number;
-      node.keys = [parent.keys[childIdx], ...node.keys];
-      node.children.push(null);
-      parent.keys[childIdx] = lastKeyOfLeftSibling;
-      return;
+      leftSibling.children.pop();
+      node.keys = [parent.keys[childIdx - 1], ...node.keys];
+      parent.keys[childIdx - 1] = lastKeyOfLeftSibling;
     }
-    if (rightSibling && rightSibling.isMoreThanMinKeys()) {
+    // @ Try borrowing from right
+    else if (rightSibling && rightSibling.isMoreThanMinKeys()) {
       const firstKeyOfRightSibling = rightSibling.keys.shift() as number;
-      node.keys = [parent.keys[childIdx], ...node.keys];
-      node.children.push(null);
+      rightSibling.children.pop();
+      node.keys = [...node.keys, parent.keys[childIdx]];
       parent.keys[childIdx] = firstKeyOfRightSibling;
-      return;
     }
-    if (leftSibling) {
-      // @ merge with left sibling
-      return;
+    // @ If left sibling merge with if
+    else if (leftSibling) {
+      const keyFromParent = parent.keys[childIdx - 1];
+      node.keys = [...leftSibling.keys, keyFromParent, ...node.keys];
+      node.children = [...leftSibling.children, ...node.children];
+      parent.keys = parent.keys.filter((key) => key != keyFromParent);
+      parent.children = parent.children.filter((child) => child != leftSibling);
     }
-    if (rightSibling) {
-      // @ merge with right sibling
-      return;
+    // @ If right sibling merge with if
+    else if (rightSibling) {
+      const keyFromParent = parent.keys[childIdx];
+      node.keys = [...node.keys, keyFromParent, ...rightSibling.keys];
+      node.children = [...node.children, ...rightSibling.children];
+      parent.keys = parent.keys.filter((key) => key != keyFromParent);
+      parent.children = parent.children.filter((ch) => ch != rightSibling);
     }
+
+    this.fixDeletion(parent);
   }
 
   toString() {
@@ -136,11 +150,7 @@ export class BTree {
   }
 
   private insertToLeaf(node: BTreeNode, value: number) {
-    let insertIndex = node.keys.some((key) => key > value)
-      ? node.keys.findIndex((key) => key > value)
-      : node.keys.length;
-    // if (insertIndex == -1) insertIndex = node.keys.length;
-
+    let insertIndex = node.getInsertIndex(value);
     node.insertKeyAt(value, insertIndex);
     node.children.push(null);
 
@@ -203,9 +213,7 @@ export class BTree {
     node.children = node.children.slice(0, medianIndex + 1);
 
     // @ Update parent
-    const insertIndex = parent.keys.some((key) => key > medianKey)
-      ? parent.keys.findIndex((key) => key > medianKey)
-      : parent.keys.length;
+    const insertIndex = parent.getInsertIndex(medianKey);
     parent.insertKeyAt(medianKey, insertIndex);
     parent.insertChildAt(newNode, insertIndex + 1);
 
