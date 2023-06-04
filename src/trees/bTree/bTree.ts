@@ -101,10 +101,11 @@ export class BTree {
     else {
       left.keys = [...left.keys, value, ...right.keys];
       left.children = [...left.children, ...right.children];
+      this.organizeChildren(left);
       node.keys = node.keys.filter((key) => key != value);
       node.children = node.children.filter((ch) => ch != right);
       this.deleteNode(left, value);
-      this.fixDeletion(node)
+      this.fixDeletion(node);
     }
   }
 
@@ -113,7 +114,15 @@ export class BTree {
   }
 
   private fixDeletion(node: BTreeNode) {
-    if (node == this.root || !node.isUnderFlow()) return;
+    if (!node.isUnderFlow()) return;
+
+    if (node == this.root) {
+      if (node.keys.length == 0) {
+        this.root == this.root.children[0];
+        this.root.parent = null;
+      }
+      return;
+    }
 
     const parent = node.parent!;
     const leftSibling = node.leftSibling();
@@ -141,6 +150,7 @@ export class BTree {
       const keyFromParent = parent.keys[childIdx - 1];
       node.keys = [...leftSibling.keys, keyFromParent, ...node.keys];
       node.children = [...leftSibling.children, ...node.children];
+      this.organizeChildren(node);
       parent.keys = parent.keys.filter((key) => key != keyFromParent);
       parent.children = parent.children.filter((child) => child != leftSibling);
     }
@@ -149,6 +159,7 @@ export class BTree {
       const keyFromParent = parent.keys[childIdx];
       node.keys = [...node.keys, keyFromParent, ...rightSibling.keys];
       node.children = [...node.children, ...rightSibling.children];
+      this.organizeChildren(node);
       parent.keys = parent.keys.filter((key) => key != keyFromParent);
       parent.children = parent.children.filter((ch) => ch != rightSibling);
     }
@@ -174,6 +185,12 @@ export class BTree {
       queue = newQueue;
     }
     return str;
+  }
+
+  private organizeChildren(node: BTreeNode) {
+    node.children.forEach((child) => {
+      if (child) child.parent = node;
+    });
   }
 
   private findNode(value: number) {
