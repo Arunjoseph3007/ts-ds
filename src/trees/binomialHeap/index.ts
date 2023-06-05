@@ -2,13 +2,14 @@ import { BinomialHeap } from "./binomialHeap";
 
 let a = new BinomialHeap();
 
-a.insert(1);
-a.insert(2);
-a.insert(3);
-a.insert(4);
-a.insert(5);
-a.insert(6);
-a.insert(7);
+// new Array(15).forEach((_, i) => a.insert(i + 1));
+for (let i = 1; i < 16; i++) a.insert(i);
 
-console.log(a.root);
-console.log(a.root?.brother?.brother);
+console.log(a.toString());
+
+a.extractMin()
+
+console.log(a.toString());
+a.extractMin()
+
+console.log(a.toString());
