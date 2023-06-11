@@ -93,7 +93,12 @@ export class AVLTreeNode {
       COLORS.bg.black +
       " " +
       this.value +
-      " " +
+      COLORS.fg.white +
+      "(" +
+      COLORS.fg.cyan +
+      this.balanceFactor() +
+      COLORS.fg.white +
+      ") " +
       COLORS.reset
     );
   }

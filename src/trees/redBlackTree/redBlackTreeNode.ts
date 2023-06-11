@@ -130,9 +130,9 @@ export class RNode {
       COLORS.reset +
       COLORS.fg.white +
       (this.isRed() ? COLORS.bg.red : COLORS.bg.black) +
-      " " +
+      "  " +
       (this.isNull ? "N" : this.value) +
-      " " +
+      "  " +
       COLORS.reset
     );
   }

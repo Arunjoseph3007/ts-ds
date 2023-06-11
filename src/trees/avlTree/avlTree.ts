@@ -74,7 +74,7 @@ export class AVLTree {
     }
   }
 
-  private fixInsert(newNode: AVLTreeNode | null) {
+  private fixBalanceFactor(newNode: AVLTreeNode | null) {
     if (!newNode) return;
 
     const parent = newNode.parent;
@@ -105,9 +105,37 @@ export class AVLTree {
         this.rotateLeft(grandParent);
       }
 
-      this.fixInsert(greatGrandParent);
+      this.fixBalanceFactor(greatGrandParent);
     } else {
-      this.fixInsert(parent);
+      this.fixBalanceFactor(parent);
+    }
+  }
+
+  private bstDelete(node: AVLTreeNode) {
+    if (node == this.root) {
+      this.root = null;
+      return;
+    }
+
+    if (!node.left && !node.right) {
+      const parent = node.parent;
+      node.deleteSelf();
+      this.fixBalanceFactor(parent);
+    }
+
+    if (node.left && !node.right) {
+      node.value = node.left.value;
+      this.bstDelete(node.left);
+    }
+
+    if (node.right && !node.left) {
+      node.value = node.right.value;
+      this.bstDelete(node.right);
+    }
+
+    if (node.left && node.right) {
+      const succ = node.inorderSuccessor()!;
+      this.bstDelete(succ);
     }
   }
 
@@ -122,15 +150,14 @@ export class AVLTree {
     }
 
     this.bstInsert(newNode);
-    this.fixInsert(newNode);
+    this.fixBalanceFactor(newNode);
   }
 
   delete(value: number) {
     const node = this.find(value);
-
     if (!node) return;
 
-    console.log("to be implemented");
+    this.bstDelete(node);
   }
 
   find(value: number) {
@@ -153,5 +180,50 @@ export class AVLTree {
   print() {
     console.log("AVL TREE:");
     this.root?.print();
+  }
+
+  toString() {
+    if (!this.root) return "";
+
+    const count: Record<number, number> = {};
+    const spacing = "    ";
+    const visited = new Set<number>();
+    let ans = "";
+    let depth = 0;
+    let node = this.root;
+
+    while (true) {
+      if (node.right && !visited.has(node.right.value)) {
+        node = node.right;
+        depth++;
+        continue;
+      }
+
+      if (!visited.has(node.value)) {
+        for (let i = 0; i < depth; i++) {
+          ans += i && count[i] % 2 ? "|" : " ";
+          ans += spacing;
+        }
+        if (!count[depth]) count[depth] = 0;
+        count[depth]++;
+        visited.add(node.value);
+        ans += node + "\n";
+      }
+
+      if (node.left && !visited.has(node.left.value)) {
+        node = node.left;
+        depth++;
+        continue;
+      }
+
+      if (node.parent) {
+        node = node.parent;
+        depth--;
+        continue;
+      }
+      break;
+    }
+
+    return ans;
   }
 }

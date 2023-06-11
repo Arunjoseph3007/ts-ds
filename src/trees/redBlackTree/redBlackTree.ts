@@ -323,4 +323,49 @@ export class RedBlackTree {
     console.log("RED BLACK TREE:");
     this.root?.print();
   }
+
+  toString() {
+    if (!this.root) return "";
+
+    const count: Record<number, number> = {};
+    const spacing = "    ";
+    const visited = new Set<number>();
+    let ans = "";
+    let depth = 0;
+    let node = this.root;
+
+    while (true) {
+      if (node.right && !visited.has(node.right.value)) {
+        node = node.right;
+        depth++;
+        continue;
+      }
+
+      if (!visited.has(node.value)) {
+        for (let i = 0; i < depth; i++) {
+          ans += i && count[i] % 2 ? "|" : " ";
+          ans += spacing;
+        }
+        if (!count[depth]) count[depth] = 0;
+        count[depth]++;
+        visited.add(node.value);
+        ans += node + "\n";
+      }
+
+      if (node.left && !visited.has(node.left.value)) {
+        node = node.left;
+        depth++;
+        continue;
+      }
+
+      if (node.parent) {
+        node = node.parent;
+        depth--;
+        continue;
+      }
+      break;
+    }
+
+    return ans;
+  }
 }
