@@ -87,6 +87,7 @@ export class AVLTreeNode {
   }
 
   toString() {
+    const bf = this.balanceFactor();
     return (
       COLORS.reset +
       COLORS.fg.white +
@@ -95,8 +96,8 @@ export class AVLTreeNode {
       this.value +
       COLORS.fg.white +
       "(" +
-      COLORS.fg.cyan +
-      this.balanceFactor() +
+      (Math.abs(bf) >= 2 ? COLORS.fg.red : COLORS.fg.cyan) +
+      bf +
       COLORS.fg.white +
       ") " +
       COLORS.reset

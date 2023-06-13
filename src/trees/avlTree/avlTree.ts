@@ -74,49 +74,47 @@ export class AVLTree {
     }
   }
 
-  private fixBalanceFactor(newNode: AVLTreeNode | null) {
-    if (!newNode) return;
+  private fixBalanceFactor(node: AVLTreeNode | null) {
+    if (!node) return;
 
-    const parent = newNode.parent;
-    const grandParent = parent?.parent;
+    const parent = node.parent;
+    const options = [
+      node.left?.left?.height() ?? -2,
+      node.left?.right?.height() ?? -2,
+      node.right?.left?.height() ?? -2,
+      node.right?.right?.height() ?? -2,
+    ];
+    const max = Math.max(...options);
+    const directions = ["LL", "LR", "RL", "RR"] as const;
+    const insertion = directions.at(options.indexOf(max));
 
-    if (!parent || !grandParent) return;
-
-    const dir = newNode.getDir()!;
-    const parentDir = parent.getDir()!;
-    const greatGrandParent = grandParent.parent;
-
-    if (Math.abs(grandParent.balanceFactor()) > 1) {
-      if (dir == "LEFT" && parentDir == "LEFT") {
-        this.rotateLeft(grandParent);
-      }
-
-      if (dir == "RIGHT" && parentDir == "RIGHT") {
-        this.rotateRight(grandParent);
-      }
-
-      if (dir == "LEFT" && parentDir == "RIGHT") {
-        this.rotateLeft(parent);
-        this.rotateRight(grandParent);
-      }
-
-      if (dir == "RIGHT" && parentDir == "LEFT") {
-        this.rotateRight(parent);
-        this.rotateLeft(grandParent);
-      }
-
-      this.fixBalanceFactor(greatGrandParent);
-    } else {
+    if (Math.abs(node.balanceFactor()) <= 1 || max == -2) {
       this.fixBalanceFactor(parent);
-    }
-  }
-
-  private bstDelete(node: AVLTreeNode) {
-    if (node == this.root) {
-      this.root = null;
       return;
     }
 
+    if (insertion == "LL") {
+      this.rotateLeft(node);
+    }
+
+    if (insertion == "RR") {
+      this.rotateRight(node);
+    }
+
+    if (insertion == "RL") {
+      this.rotateLeft(node.right!);
+      this.rotateRight(node);
+    }
+
+    if (insertion == "LR") {
+      this.rotateRight(node.left!);
+      this.rotateLeft(node);
+    }
+
+    this.fixBalanceFactor(parent);
+  }
+
+  private bstDelete(node: AVLTreeNode) {
     if (!node.left && !node.right) {
       const parent = node.parent;
       node.deleteSelf();
@@ -135,6 +133,7 @@ export class AVLTree {
 
     if (node.left && node.right) {
       const succ = node.inorderSuccessor()!;
+      node.value = succ.value;
       this.bstDelete(succ);
     }
   }

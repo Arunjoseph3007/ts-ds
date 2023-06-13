@@ -1,14 +1,20 @@
 import { AVLTree } from "./avlTree";
 
-let avl = new AVLTree();
+const avl = new AVLTree();
+const nos: number[] = [];
 
-for (let i = 1; i < 50; i++) {
-  avl.insert(i);
+for (let i = 0; i < 50; i++) {
+  const l = Math.floor(Math.random() * 200);
+  nos.push(l);
+  avl.insert(l);
 }
 
-console.log("" + avl);
-// for (let i = 20; i > 1; i--) {
-//   console.log("deleting", i);
-//   avl.delete(i);
-//   avl.print();
-// }
+console.log(''+avl);
+
+
+for (let i = 0; i < 20; i++) {
+  const l = Math.floor(Math.random() * 50);
+  avl.delete(nos[l])
+  console.log(''+avl);
+
+}

@@ -347,7 +347,8 @@ export class RedBlackTree {
           ans += spacing;
         }
         if (!count[depth]) count[depth] = 0;
-        count[depth]++;
+        if (node.getDir() == "RIGHT") count[depth]++;
+        else count[depth]--
         visited.add(node.value);
         ans += node + "\n";
       }

@@ -148,4 +148,3 @@ export class RNode {
     if (this.left) this.left.print(level + 1);
   }
 }
-
